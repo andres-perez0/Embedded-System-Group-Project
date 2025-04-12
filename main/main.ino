@@ -19,10 +19,23 @@
 #define OLED_RESET  -1
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // -1 for no reset pin
 
+// define the pins:
+#define potentiometer A0
+#define life_1 12
+#define life_2 8
+#define life_3 4
+#define button 2
+
 void setup() {
   Serial.begin(9600);
+  // declare pins as inputs/outputs:
+  pinMode(potentiometer, INPUT);
+  pinMode(life_1, OUTPUT);
+  pinMode(life_2, OUTPUT);
+  pinMode(life_3, OUTPUT);
+  pinMode(button, INPUT);
 
-  if(display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR == 0)) {
+  if(display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR) == 0) {
     // Checks if the address is approiate
     Serial.println(F("SSD1306 allocation failed"));
     while(1);
@@ -41,6 +54,12 @@ void loop() {
   display.drawFastVLine(x, y, paddleSize, WHITE);
   display.display();
 
+  int reading = analogRead(potentiometer);
+  y = map(reading, 0, 1023, 2, 46);
+  display.clearDisplay();
+  display.drawFastVLine(x, y, 8, WHITE);
+  display.display(); 
+/**
   if(Serial.available()) {
     c = Serial.read();
     if (c == 's') {
@@ -55,5 +74,5 @@ void loop() {
       display.display();
     }
   }
-  delay(100);
+  delay(100);**/
 }
