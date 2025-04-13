@@ -1,11 +1,3 @@
-// Additional Resources https://forum.arduino.cc/t/arduino-i2c-with-ssd1306-oled-random-pixels/870026 
-
-// Task 
-// - Design the Proper Circuit (aka sketch out a diagram)
-// - Think about the logic 
-// - Divide the Task between us
-// - think about optimizations to ensure a proper fps (using the libary or trying to get real into depth with the memory to increase fps)
-
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -13,10 +5,11 @@
 // Screen Dimensions (pixels)
 #define SCREEN_WIDTH 128 
 #define SCREEN_HEIGHT 64 
-// I2C address found from the I2C scanner
-#define OLED_ADDR   0x3C 
 
-#define OLED_RESET  -1
+// I2C address found from the I2C scanner
+#define OLED_ADDR 0x3C 
+#define OLED_RESET -1
+
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // -1 for no reset pin
 
 // define the pins:
@@ -28,7 +21,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // -1 
 
 void setup() {
   Serial.begin(9600);
-  // declare pins as inputs/outputs:
+
   pinMode(potentiometer, INPUT);
   pinMode(life_1, OUTPUT);
   pinMode(life_2, OUTPUT);
@@ -36,43 +29,50 @@ void setup() {
   pinMode(button, INPUT);
 
   if(display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR) == 0) {
-    // Checks if the address is approiate
     Serial.println(F("SSD1306 allocation failed"));
     while(1);
   }
-
   delay(1000); 
 }
 
-const int x = 2;
+int px = 3, py = 3;
+
 const int paddleSize = 16;
-int y = 2;
-char c; 
+
+void drawBoundaries();
+void drawBall(int, int);
 
 void loop() {
-  display.clearDisplay();
-  display.drawFastVLine(x, y, paddleSize, WHITE);
-  display.display();
-
   int reading = analogRead(potentiometer);
-  y = map(reading, 0, 1023, 2, 46);
+  py = map(reading, 0, 1023, 3, 45);
+
   display.clearDisplay();
-  display.drawFastVLine(x, y, 8, WHITE);
+
+  drawBoundaries();
+
+  drawBall(38, 32);
+
+  // Draws Paddle
+  display.drawFastVLine(px, py, paddleSize, WHITE);
+  
   display.display(); 
-/**
-  if(Serial.available()) {
-    c = Serial.read();
-    if (c == 's') {
-      y += 2; 
-      display.clearDisplay();
-      display.drawFastVLine(x, y, 8, WHITE);
-      display.display();
-    } else if (c == 'w') {
-      y -= 2; 
-      display.clearDisplay();
-      display.drawFastVLine(x, y, 8, WHITE);
-      display.display();
-    }
-  }
-  delay(100);**/
+
+  delay(75);
+}
+
+void drawBall(int centerX, int centerY) {
+  display.drawFastHLine(centerX-2, centerY-3, 3, WHITE);
+  display.drawFastHLine(centerX-3, centerY-2, 5, WHITE);
+  display.drawFastHLine(centerX-4, centerY-1, 7, WHITE);
+  display.drawFastHLine(centerX-4, centerY, 7, WHITE);
+  display.drawFastHLine(centerX-4, centerY+1, 7, WHITE);
+  display.drawFastHLine(centerX-3, centerY+2, 5, WHITE);
+  display.drawFastHLine(centerX-2, centerY+3, 3, WHITE); 
+}
+
+void drawBoundaries() {
+  display.drawFastVLine(0, 0, 64, WHITE);
+  display.drawFastHLine(0, 0, 128, WHITE);
+  display.drawFastVLine(127, 0, 64, WHITE);
+  display.drawFastHLine(0, 63, 128, WHITE);
 }
