@@ -1,3 +1,7 @@
+/*
+  Task 1 (explained below) 
+  Task 2 The button task, to create a 'pause' and start to the game
+*/
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -21,7 +25,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // -1 
 
 void setup() {
   Serial.begin(9600);
-
+  
   pinMode(potentiometer, INPUT);
   pinMode(life_1, OUTPUT);
   pinMode(life_2, OUTPUT);
@@ -32,11 +36,14 @@ void setup() {
     Serial.println(F("SSD1306 allocation failed"));
     while(1);
   }
-  delay(1000); 
+
+  delay(1000);   
 }
 
-int px = 3, py = 3;
-
+int px = 7, py = 3;
+int bx=SCREEN_WIDTH/2, by=SCREEN_HEIGHT/2;
+float dx=5, dy=5;
+const int r = 7;
 const int paddleSize = 16;
 
 void drawBoundaries();
@@ -46,15 +53,49 @@ void loop() {
   int reading = analogRead(potentiometer);
   py = map(reading, 0, 1023, 3, 45);
 
+  // Increase ball's velocity
+  bx += dx;
+  by += dy;
+
+  // Border Dectection
+  if (bx + r >= SCREEN_WIDTH) {
+    dx = -dx;
+    bx = SCREEN_WIDTH - r;
+  }
+  if (by + r >= SCREEN_HEIGHT) {
+    dy = -dy;
+    by = SCREEN_HEIGHT - r;
+  }
+  if (by - r <= 0) {
+    dy = -dy;
+    by = r;
+  }
+
+  // Task 1
+  if (bx - r <= 0) {
+    // Code the Lights to make it go down when it passes this point;
+    // Rest start the ball's position 
+    // Make sure the ball's velocity is positive (headed towards the left)
+  }
+
+  // Ball Collision;
+  if (bx - r <= px) {
+      for (int i = 0; i < paddleSize; i++) {
+        if ((py + i) == by + r) {
+          dx = -dx;
+        }
+        if ((py + i) == by - r) {
+          dx = -dx;
+        }
+    }
+  }
+  
   display.clearDisplay();
-
   drawBoundaries();
-
-  drawBall(38, 32);
+  drawBall(bx, by);
 
   // Draws Paddle
   display.drawFastVLine(px, py, paddleSize, WHITE);
-  
   display.display(); 
 
   delay(75);
