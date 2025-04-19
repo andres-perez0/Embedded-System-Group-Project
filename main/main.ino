@@ -32,10 +32,17 @@ void setup() {
   pinMode(life_3, OUTPUT);
   pinMode(button, INPUT);
 
+  // turn on the lives
+  digitalWrite(life_1, 255);
+  digitalWrite(life_2, 255);
+  digitalWrite(life_3, 255);
+
   if(display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR) == 0) {
     Serial.println(F("SSD1306 allocation failed"));
     while(1);
   }
+
+  attachInterrupt(digitalPinToInterrupt(button), button_clicked, RISING);
 
   delay(1000);   
 }
@@ -45,6 +52,7 @@ int bx=SCREEN_WIDTH/2, by=SCREEN_HEIGHT/2;
 float dx=5, dy=5;
 const int r = 7;
 const int paddleSize = 16;
+int click_count = 0;
 
 void drawBoundaries();
 void drawBall(int, int);
@@ -74,8 +82,23 @@ void loop() {
   // Task 1
   if (bx - r <= 0) {
     // Code the Lights to make it go down when it passes this point;
-    // Rest start the ball's position 
+    if (digitalRead(life_2) == 0){
+      digitalWrite(life_3, 0);
+    }
+    else if (digitalRead(life_1) == 0){
+      digitalWrite(life_2, 0);
+    }
+    else{
+      digitalWrite(life_1, 0);
+    }
+    // Reset start the ball's position 
+    delay(100);
+    bx = SCREEN_WIDTH/2;
+    by = SCREEN_HEIGHT/2;
     // Make sure the ball's velocity is positive (headed towards the left)
+    dx = abs(dx);
+    dy = abs(dy);
+
   }
 
   // Ball Collision;
@@ -116,4 +139,31 @@ void drawBoundaries() {
   display.drawFastHLine(0, 0, 128, WHITE);
   display.drawFastVLine(127, 0, 64, WHITE);
   display.drawFastHLine(0, 63, 128, WHITE);
+}
+
+void button_clicked(){
+  static unsigned long last_processed_interrupt_time = 0;
+  unsigned long current_interrupt_time = millis();
+
+  if (current_interrupt_time - last_processed_interrupt_time > 250){
+    click_count += 1;
+    if (click_count % 2 == 1){
+      pause_screen();
+    }
+    else{
+      unpause();
+    }
+  }
+}
+
+void pause_screen(){
+  display.clearDisplay();
+  drawBoundaries();
+  delay(3000);
+}
+
+void unpause(){
+  display.clearDisplay();
+  drawBall(bx, by);
+  drawBoundaries();
 }
