@@ -33,9 +33,9 @@ void setup() {
   pinMode(button, INPUT);
 
   // turn on the lives
-  digitalWrite(life_1, 255);
-  digitalWrite(life_2, 255);
-  digitalWrite(life_3, 255);
+  digitalWrite(life_1, HIGH);
+  digitalWrite(life_2, HIGH);
+  digitalWrite(life_3, HIGH);
 
   if(display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR) == 0) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -52,57 +52,63 @@ int bx=SCREEN_WIDTH/2, by=SCREEN_HEIGHT/2;
 float dx=5, dy=5;
 const int r = 7;
 const int paddleSize = 16;
-int click_count = 0;
+volatile int pause = 0;
+float last_dx = 5, last_dy = 5;
 
 void drawBoundaries();
 void drawBall(int, int);
 
 void loop() {
-  int reading = analogRead(potentiometer);
-  py = map(reading, 0, 1023, 3, 45);
+  if (pause == 0){
+    dx = last_dx;
+    dy = last_dy;
 
-  // Increase ball's velocity
-  bx += dx;
-  by += dy;
+    int reading = analogRead(potentiometer);
+    py = map(reading, 0, 1023, 3, 45);
 
-  // Border Dectection
-  if (bx + r >= SCREEN_WIDTH) {
-    dx = -dx;
-    bx = SCREEN_WIDTH - r;
-  }
-  if (by + r >= SCREEN_HEIGHT) {
-    dy = -dy;
-    by = SCREEN_HEIGHT - r;
-  }
-  if (by - r <= 0) {
-    dy = -dy;
-    by = r;
-  }
+    // Increase ball's velocity
+    bx += dx;
+    by += dy;
 
-  // Task 1
-  if (bx - r <= 0) {
-    // Code the Lights to make it go down when it passes this point;
-    if (digitalRead(life_2) == 0){
-      digitalWrite(life_3, 0);
+    // Border Dectection
+    if (bx + r >= SCREEN_WIDTH) {
+      dx = -dx;
+      bx = SCREEN_WIDTH - r;
     }
-    else if (digitalRead(life_1) == 0){
-      digitalWrite(life_2, 0);
+    if (by + r >= SCREEN_HEIGHT) {
+      dy = -dy;
+      by = SCREEN_HEIGHT - r;
     }
-    else{
-      digitalWrite(life_1, 0);
+    if (by - r <= 0) {
+      dy = -dy;
+      by = r;
     }
-    // Reset start the ball's position 
-    delay(100);
-    bx = SCREEN_WIDTH/2;
-    by = SCREEN_HEIGHT/2;
-    // Make sure the ball's velocity is positive (headed towards the left)
-    dx = abs(dx);
-    dy = abs(dy);
 
-  }
+    // Task 1
+    if (bx - r <= 0) {
+      // Code the Lights to make it go down when it passes this point;
+      if (digitalRead(life_2) == 0){
+        digitalWrite(life_3, LOW);
+      }
+      else if (digitalRead(life_1) == LOW){
+        digitalWrite(life_2, LOW);
+      }
+      else{
+        digitalWrite(life_1, LOW);
+      }
+      // Reset start the ball's position 
+      delay(100);
+      bx = SCREEN_WIDTH/2;
+      by = SCREEN_HEIGHT/2;
+      // Make sure the ball's velocity is positive (headed towards the left)
+      dx = abs(dx);
+      dy = abs(dy);
+    }
+    
+  
 
-  // Ball Collision;
-  if (bx - r <= px) {
+    // Ball Collision;
+    if (bx - r <= px) {
       for (int i = 0; i < paddleSize; i++) {
         if ((py + i) == by + r) {
           dx = -dx;
@@ -110,16 +116,27 @@ void loop() {
         if ((py + i) == by - r) {
           dx = -dx;
         }
+      }
     }
-  }
   
-  display.clearDisplay();
-  drawBoundaries();
-  drawBall(bx, by);
+    display.clearDisplay();
+    drawBoundaries();
+    drawBall(bx, by);
 
-  // Draws Paddle
-  display.drawFastVLine(px, py, paddleSize, WHITE);
-  display.display(); 
+    // Draws Paddle
+    display.drawFastVLine(px, py, paddleSize, WHITE);
+    display.display();
+    last_dx = dx;
+    last_dy = dy; 
+  }
+  else{
+    
+    last_dx = dx;
+    last_dy = dy;
+    dx = 0;
+    dy = 0;
+    //pause_screen();
+  }
 
   delay(75);
 }
@@ -146,12 +163,11 @@ void button_clicked(){
   unsigned long current_interrupt_time = millis();
 
   if (current_interrupt_time - last_processed_interrupt_time > 250){
-    click_count += 1;
-    if (click_count % 2 == 1){
-      pause_screen();
+    if (pause == 0){
+      pause = 1;
     }
     else{
-      unpause();
+      pause = 0;
     }
   }
 }
@@ -159,11 +175,5 @@ void button_clicked(){
 void pause_screen(){
   display.clearDisplay();
   drawBoundaries();
-  delay(3000);
 }
 
-void unpause(){
-  display.clearDisplay();
-  drawBall(bx, by);
-  drawBoundaries();
-}
