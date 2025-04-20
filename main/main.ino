@@ -1,7 +1,3 @@
-/*
-  Task 1 (explained below) 
-  Task 2 The button task, to create a 'pause' and start to the game
-*/
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
@@ -49,20 +45,19 @@ void setup() {
 
 int px = 7, py = 3;
 int bx=SCREEN_WIDTH/2, by=SCREEN_HEIGHT/2;
-float dx=5, dy=5;
+
 const int r = 7;
 const int paddleSize = 16;
 volatile int pause = 0;
-float last_dx = 5, last_dy = 5;
+
+volatile float dx=5, dy=5;
+volatile float last_dx = 5, last_dy = 5;
 
 void drawBoundaries();
 void drawBall(int, int);
 
 void loop() {
   if (pause == 0){
-    dx = last_dx;
-    dy = last_dy;
-
     int reading = analogRead(potentiometer);
     py = map(reading, 0, 1023, 3, 45);
 
@@ -116,6 +111,8 @@ void loop() {
         if ((py + i) == by - r) {
           dx = -dx;
         }
+        last_dx = dx;
+
       }
     }
   
@@ -130,11 +127,6 @@ void loop() {
     last_dy = dy; 
   }
   else{
-    
-    last_dx = dx;
-    last_dy = dy;
-    dx = 0;
-    dy = 0;
     //pause_screen();
   }
 
@@ -164,10 +156,17 @@ void button_clicked(){
 
   if (current_interrupt_time - last_processed_interrupt_time > 250){
     if (pause == 0){
+
       pause = 1;
+      last_dx = dx;
+      last_dy = dy;
+      dx = 0;
+      dy = 0;
     }
     else{
       pause = 0;
+      dx = last_dx;
+      dx = lasy_dy;
     }
   }
 }
