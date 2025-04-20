@@ -56,7 +56,12 @@ volatile float last_dx = 5, last_dy = 5;
 void drawBoundaries();
 void drawBall(int, int);
 
+int gameOn = 1;
+
 void loop() {
+  if (pause == 1 && !gameOn) {
+    Serial.println("Game over");
+  }  
   if (pause == 0){
     int reading = analogRead(potentiometer);
     py = map(reading, 0, 1023, 3, 45);
@@ -80,10 +85,12 @@ void loop() {
     }
 
     // Task 1
-    if (bx - r <= 0) {
+    if (bx - r <= -20) {
       // Code the Lights to make it go down when it passes this point;
       if (digitalRead(life_2) == 0){
         digitalWrite(life_3, LOW);
+        pause=1;
+        gameOn=0;
       }
       else if (digitalRead(life_1) == LOW){
         digitalWrite(life_2, LOW);
@@ -99,8 +106,6 @@ void loop() {
       dx = abs(dx);
       dy = abs(dy);
     }
-    
-  
 
     // Ball Collision;
     if (bx - r <= px) {
@@ -111,24 +116,17 @@ void loop() {
         if ((py + i) == by - r) {
           dx = -dx;
         }
-        last_dx = dx;
 
       }
     }
-  
-    display.clearDisplay();
-    drawBoundaries();
-    drawBall(bx, by);
+  }
+  display.clearDisplay();
+  drawBoundaries();
+  drawBall(bx, by);
 
-    // Draws Paddle
-    display.drawFastVLine(px, py, paddleSize, WHITE);
-    display.display();
-    last_dx = dx;
-    last_dy = dy; 
-  }
-  else{
-    //pause_screen();
-  }
+  // Draws Paddle
+  display.drawFastVLine(px, py, paddleSize, WHITE);
+  display.display();
 
   delay(75);
 }
@@ -156,7 +154,6 @@ void button_clicked(){
 
   if (current_interrupt_time - last_processed_interrupt_time > 250){
     if (pause == 0){
-
       pause = 1;
       last_dx = dx;
       last_dy = dy;
@@ -166,9 +163,10 @@ void button_clicked(){
     else{
       pause = 0;
       dx = last_dx;
-      dx = lasy_dy;
+      dy = last_dy;
     }
   }
+  last_processed_interrupt_time = current_interrupt_time;
 }
 
 void pause_screen(){
