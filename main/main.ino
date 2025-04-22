@@ -14,10 +14,13 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // -1 
 
 // define the pins:
 #define potentiometer A0
-#define life_1 12
-#define life_2 8
-#define life_3 4
+#define life_1 5
+#define life_2 9
+#define life_3 11
 #define button 2
+
+int led_brightness = 20;
+
 
 void setup() {
   Serial.begin(9600);
@@ -29,9 +32,9 @@ void setup() {
   pinMode(button, INPUT);
 
   // turn on the lives
-  digitalWrite(life_1, HIGH);
-  digitalWrite(life_2, HIGH);
-  digitalWrite(life_3, HIGH);
+  analogWrite(life_1, led_brightness);
+  analogWrite(life_2, led_brightness);
+  analogWrite(life_3, led_brightness);
 
   if(display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR) == 0) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -57,10 +60,34 @@ void drawBoundaries();
 void drawBall(int, int);
 
 int gameOn = 1;
+int numLives = 3;
 
 void loop() {
   if (pause == 1 && !gameOn) {
     Serial.println("Game over");
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setTextColor(WHITE);
+    display.setCursor(15, 20);
+    display.println(F("GAME OVER"));
+    display.setTextSize(1);
+    display.println(F(" "));
+    display.println(F("Press Button to Start"));
+    display.display();
+    delay(100);
+    display.startscrollleft(0x00, 0x0F);
+    while(pause == 1){
+      delay(100);
+    }
+    if (pause == 0){
+      gameOn = 1;
+      numLives = 3;
+       // turn on the lives
+      analogWrite(life_1, led_brightness);
+      analogWrite(life_2, led_brightness);
+      analogWrite(life_3, led_brightness);
+    }
+
   }  
   if (pause == 0){
     int reading = analogRead(potentiometer);
@@ -87,16 +114,18 @@ void loop() {
     // Task 1
     if (bx - r <= -20) {
       // Code the Lights to make it go down when it passes this point;
-      if (digitalRead(life_2) == 0){
-        digitalWrite(life_3, LOW);
+      if (numLives == 1){
+        analogWrite(life_3, 0);
         pause=1;
         gameOn=0;
       }
-      else if (digitalRead(life_1) == LOW){
-        digitalWrite(life_2, LOW);
+      else if (numLives == 2){
+        analogWrite(life_2, 0);
+        numLives -= 1;
       }
-      else{
-        digitalWrite(life_1, LOW);
+      else if (numLives == 3){
+        analogWrite(life_1,0);
+        numLives -= 1;
       }
       // Reset start the ball's position 
       delay(100);
@@ -169,8 +198,4 @@ void button_clicked(){
   last_processed_interrupt_time = current_interrupt_time;
 }
 
-void pause_screen(){
-  display.clearDisplay();
-  drawBoundaries();
-}
 
