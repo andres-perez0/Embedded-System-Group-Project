@@ -21,7 +21,6 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET); // -1 
 
 int led_brightness = 20;
 
-
 void setup() {
   Serial.begin(9600);
   
@@ -46,6 +45,13 @@ void setup() {
   delay(1000);   
 }
 
+
+// Prototype Functions
+void drawBoundaries();
+void drawBall(int, int);
+void gameOverScreen();
+void resetGame();
+
 int px = 7, py = 3;
 int bx=SCREEN_WIDTH/2, by=SCREEN_HEIGHT/2;
 
@@ -56,39 +62,24 @@ volatile int pause = 0;
 volatile float dx=5, dy=5;
 volatile float last_dx = 5, last_dy = 5;
 
-void drawBoundaries();
-void drawBall(int, int);
-
 int gameOn = 1;
 int numLives = 3;
 
 void loop() {
   if (pause == 1 && !gameOn) {
-    Serial.println("Game over");
-    display.clearDisplay();
-    display.setTextSize(2);
-    display.setTextColor(WHITE);
-    display.setCursor(15, 20);
-    display.println(F("GAME OVER"));
-    display.setTextSize(1);
-    display.println(F(" "));
-    display.println(F("Press Button to Start"));
-    display.display();
-    delay(100);
-    display.startscrollleft(0x00, 0x0F);
+    gameOverScreen();
+
     while(pause == 1){
+      // Until the button is button is selected again the user is in a infinity loop;
       delay(100);
     }
+    
     if (pause == 0){
-      gameOn = 1;
-      numLives = 3;
-       // turn on the lives
-      analogWrite(life_1, led_brightness);
-      analogWrite(life_2, led_brightness);
-      analogWrite(life_3, led_brightness);
+      // When the button is pressed; Stop the scrolling effect & reset the lives back to full;
+      resetGame();
     }
-
   }  
+
   if (pause == 0){
     int reading = analogRead(potentiometer);
     py = map(reading, 0, 1023, 3, 45);
@@ -128,9 +119,9 @@ void loop() {
         numLives -= 1;
       }
       // Reset start the ball's position 
-      delay(100);
       bx = SCREEN_WIDTH/2;
       by = SCREEN_HEIGHT/2;
+
       // Make sure the ball's velocity is positive (headed towards the left)
       dx = abs(dx);
       dy = abs(dy);
@@ -149,6 +140,7 @@ void loop() {
       }
     }
   }
+  
   display.clearDisplay();
   drawBoundaries();
   drawBall(bx, by);
@@ -177,6 +169,31 @@ void drawBoundaries() {
   display.drawFastHLine(0, 63, 128, WHITE);
 }
 
+void gameOverScreen() {
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(WHITE);
+  display.setCursor(15, 20);
+  display.println(F("GAME OVER"));
+  display.setTextSize(1);
+  display.println(F(" "));
+  display.println(F("Press Button to Start"));
+  display.display();
+  display.startscrollleft(0x00, 0x0F);
+}
+
+void resetGame(){
+  display.stopscroll();
+
+  gameOn = 1;
+  numLives = 3;
+
+  // Turn on the lives
+  analogWrite(life_1, led_brightness);
+  analogWrite(life_2, led_brightness);
+  analogWrite(life_3, led_brightness);
+}
+
 void button_clicked(){
   static unsigned long last_processed_interrupt_time = 0;
   unsigned long current_interrupt_time = millis();
@@ -197,5 +214,3 @@ void button_clicked(){
   }
   last_processed_interrupt_time = current_interrupt_time;
 }
-
-
